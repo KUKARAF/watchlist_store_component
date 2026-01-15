@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Watchlist Form</title>
+    <style>
+        .watchlist-form {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .watchlist-form h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .watchlist-form .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .watchlist-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .watchlist-form input[type="email"],
+        .watchlist-form input[type="text"],
+        .watchlist-form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .watchlist-form textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .watchlist-form button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        
+        .watchlist-form button:hover {
+            background-color: #2980b9;
+        }
+        
+        .watchlist-form .success-message {
+            color: #27ae60;
+            background-color: #e8f8f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .watchlist-form .error-message {
+            color: #e74c3c;
+            background-color: #fdecea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .watchlist-form .info-box {
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="watchlist-form">
+        <h2>Join Our Waitlist</h2>
+        
+        <div class="info-box">
+            <strong>📧 Simple Signup:</strong> This form submits directly to our server without JavaScript.
+        </div>
+        
+        <form action="http://localhost:8084/plain" method="POST">
+            <input type="hidden" name="origin" value="http://example.com">
+            
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="name">Your Name</label>
+                <input type="text" id="name" name="name" placeholder="John Doe">
+            </div>
+            
+            <div class="form-group">
+                <label for="comments">Additional Comments</label>
+                <textarea id="comments" name="comments" placeholder="Tell us about your needs..."></textarea>
+            </div>
+            
+            <button type="submit">Join Waitlist</button>
+        </form>
+    </div>
+</body>
+</html>
