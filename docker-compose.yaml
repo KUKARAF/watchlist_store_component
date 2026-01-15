@@ -1,0 +1,21 @@
+services:
+  email-watchlist:
+    build: .
+    container_name: email-watchlist-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./watchlist.db:/app/watchlist.db
+      - ./static:/app/static
+    env_file:
+      - .env
+    environment:
+      - DATABASE=watchlist.db
+      - PLAIN_DATABASE=watchlist_plain.db
+      - GPG_KEY_ID=0x633B15F3E78FCD9A251D53974AFCB3FEAE441839
+      - API_ENDPOINT=https://watchlist.layer55.eu/api/watchlist
+      - PORT=8080
+      - HOST=0.0.0.0
+      - AUTH_USERNAME=rafa
+

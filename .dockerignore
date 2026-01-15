@@ -1,0 +1,38 @@
+# Docker ignore file
+
+# Ignore virtual environment
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore environment files (but keep .env.example)
+.env
+.env.local
+
+# Ignore database files
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Ignore logs
+*.log
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore test files
+test_*.py
+
+# Ignore shell scripts (but keep start_test_server.sh)
+test_*.sh
+
+# Ignore documentation (but keep for reference)
+SUMMARY.md

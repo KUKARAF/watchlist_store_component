@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Watchlist Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/openpgp@5.0.0/dist/openpgp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        input[type="email"],
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .success-message {
+            color: #27ae60;
+            background-color: #e8f8f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            background-color: #fdecea;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .info-box {
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .encryption-info {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Join Our Waitlist</h1>
+        
+        <div class="info-box">
+            <strong>🔒 Secure Signup:</strong> All your data is encrypted with GPG before being sent to our servers.
+            Only your email address is sent unencrypted for basic validation.
+        </div>
+        
+        <form id="watchlistForm">
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="name">Your Name</label>
+                <input type="text" id="name" name="name" placeholder="John Doe">
+            </div>
+            
+            <div class="form-group">
+                <label for="comments">Additional Comments</label>
+                <textarea id="comments" name="comments" placeholder="Tell us about your needs..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Encryption Status</label>
+                <div id="encryptionStatus" class="encryption-info">
+                    ⏳ Waiting for GPG key...
+                </div>
+            </div>
+            
+            <button type="submit" id="submitBtn">
+                <span id="buttonText">Join Waitlist</span>
+                <span id="loadingSpinner" class="loading" style="display: none;"></span>
+            </button>
+        </form>
+        
+        <div id="successMessage" class="success-message" style="display: none;">
+            ✅ Thank you for joining our waitlist! We'll be in touch soon.
+        </div>
+        
+        <div id="errorMessage" class="error-message" style="display: none;">
+            ❌ Error submitting your request. Please try again.
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:8084';
+        let GPG_PUBLIC_KEY = null;
+        
+        // Fetch GPG key from server
+        async function fetchGpgKey() {
+            try {
+                document.getElementById('encryptionStatus').textContent = '🔐 Fetching encryption key...';
+                
+                const response = await fetch(`${API_BASE_URL}/gpg-key`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch GPG key: ${response.status}`);
+                }
+                
+                GPG_PUBLIC_KEY = await response.text();
+                document.getElementById('encryptionStatus').textContent = '🔒 Encryption ready - your data will be securely encrypted';
+                
+                return GPG_PUBLIC_KEY;
+            } catch (error) {
+                console.error('Failed to fetch GPG key:', error);
+                document.getElementById('encryptionStatus').textContent = '⚠️ Encryption unavailable - data will be sent unencrypted';
+                return null;
+            }
+        }
+        
+        // Encrypt data using OpenPGP
+        async function encryptData(data) {
+            if (!GPG_PUBLIC_KEY) {
+                console.warn('No GPG key available, sending data unencrypted');
+                return data; // Return unencrypted if no key available
+            }
+            
+            try {
+                const publicKey = await openpgp.readKey({ armoredKey: GPG_PUBLIC_KEY });
+                
+                const encrypted = await openpgp.encrypt({
+                    message: await openpgp.createMessage({ text: data }),
+                    encryptionKeys: publicKey,
+                    format: 'armored'
+                });
+                
+                return encrypted;
+            } catch (error) {
+                console.error('Encryption error:', error);
+                return data; // Fallback to unencrypted if encryption fails
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('watchlistForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const button = document.getElementById('submitBtn');
+            const buttonText = document.getElementById('buttonText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Show loading state
+            buttonText.textContent = 'Processing...';
+            loadingSpinner.style.display = 'inline-block';
+            button.disabled = true;
+            
+            // Hide messages
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            try {
+                // Get form data
+                const email = document.getElementById('email').value;
+                const name = document.getElementById('name').value;
+                const comments = document.getElementById('comments').value;
+                const origin = window.location.href;
+                
+                // Prepare data to encrypt
+                const dataToEncrypt = {
+                    email: email,
+                    name: name,
+                    comments: comments,
+                    origin: origin,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Encrypt the data
+                const encryptedData = await encryptData(JSON.stringify(dataToEncrypt));
+                
+                // Send to server
+                const response = await fetch(`${API_BASE_URL}/api/watchlist`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        origin: origin,
+                        name: name || null,
+                        comments: comments || null,
+                        encrypted_data: encryptedData
+                    })
+                });
+                
+                if (response.ok) {
+                    // Show success
+                    form.style.display = 'none';
+                    successMessage.style.display = 'block';
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Server error');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.style.display = 'block';
+                if (error.message.includes('Duplicate entry')) {
+                    errorMessage.textContent = '❌ You have already joined this waitlist';
+                }
+            } finally {
+                // Reset button state
+                buttonText.textContent = 'Join Waitlist';
+                loadingSpinner.style.display = 'none';
+                button.disabled = false;
+            }
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch GPG key when page loads
+            fetchGpgKey();
+        });
+    </script>
+</body>
+</html>

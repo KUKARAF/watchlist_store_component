@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Submission</title>
+    <script src="https://cdn.jsdelivr.net/npm/openpgp@5.0.0/dist/openpgp.min.js"></script>
+</head>
+<body>
+    <h1>Test Submission</h1>
+    <button onclick="testSubmission()">Test Form Submission</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testSubmission() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...<br>';
+            
+            try {
+                // Fetch GPG key
+                resultDiv.innerHTML += 'Fetching GPG key...<br>';
+                const gpgResponse = await fetch('http://localhost:8084/gpg-key');
+                const gpgKey = await gpgResponse.text();
+                resultDiv.innerHTML += '✅ GPG key fetched<br>';
+                
+                // Prepare test data
+                const testData = {
+                    email: 'test@example.com',
+                    name: 'Test User',
+                    comments: 'This is a test submission',
+                    origin: 'http://localhost:8084/test',
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Encrypt data
+                resultDiv.innerHTML += 'Encrypting data...<br>';
+                const publicKey = await openpgp.readKey({ armoredKey: gpgKey });
+                const encrypted = await openpgp.encrypt({
+                    message: await openpgp.createMessage({ text: JSON.stringify(testData) }),
+                    encryptionKeys: publicKey,
+                    format: 'armored'
+                });
+                resultDiv.innerHTML += '✅ Data encrypted<br>';
+                
+                // Submit to API
+                resultDiv.innerHTML += 'Submitting to API...<br>';
+                const apiResponse = await fetch('http://localhost:8084/api/watchlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        origin: 'http://localhost:8084/test',
+                        name: 'Test User',
+                        comments: 'This is a test submission',
+                        encrypted_data: encrypted
+                    })
+                });
+                
+                if (apiResponse.ok) {
+                    const responseData = await apiResponse.json();
+                    resultDiv.innerHTML += '✅ Submission successful!<br>';
+                    resultDiv.innerHTML += 'Response: ' + JSON.stringify(responseData) + '<br>';
+                } else {
+                    const errorData = await apiResponse.json();
+                    resultDiv.innerHTML += '❌ Submission failed: ' + JSON.stringify(errorData) + '<br>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += '❌ Error: ' + error.message + '<br>';
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
